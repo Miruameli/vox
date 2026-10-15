@@ -5,7 +5,7 @@ mod fixtures;
 use serde_json::json;
 use vox_engine_tools::GLOB_PATH_LIMIT;
 
-use fixtures::{call, failing_harness, run};
+use fixtures::{call, empty_harness, run};
 
 #[test]
 fn glob_matches_star_within_a_segment() {
@@ -70,7 +70,7 @@ fn glob_returns_paths_in_sorted_order() {
 
 #[test]
 fn glob_rejects_empty_pattern_like_grep() {
-    let (_dir, mut harness) = failing_harness();
+    let (_dir, mut harness) = empty_harness();
     let result = harness
         .call(&call("glob", json!({ "pattern": "" })))
         .expect("empty pattern");

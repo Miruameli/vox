@@ -7,6 +7,25 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The TUI seeded the stored conversation for plain `--session <id>`
+  as well as `--resume <id>`, silently continuing stale turns when
+  only the file to write was named; only `--resume` now continues a
+  conversation. Print mode ignored the session flags entirely, which
+  is indistinguishable from a lost session; it now fails with an
+  actionable error
+  ([#34](https://github.com/Miruameli/vox/issues/34)).
+
+- `bash` returned a finished command's answer only at the end of
+  its whole timeout budget when a background process held the
+  pipes open (`sh -c "echo ready; sleep 30 &"` with a 30s budget
+  returned at t=30s although the answer was ready at t=0)
+  ([#33](https://github.com/Miruameli/vox/issues/33)). Once the
+  child is reaped (or killed), pipe collection is bounded by a
+  short post-exit grace: the command's own output was written
+  before it exited, and a daemon it left behind is not the
+  command. Streams a descendant still holds are reported as
+  incomplete, unchanged.
+
 - `grep` returned matches in lexicographic order, so
   `big.rs:100:` outranked `big.rs:11:` and the 100-line cap showed a
   lexicographic page instead of the first matches

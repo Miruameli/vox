@@ -1,6 +1,12 @@
-//! Shared helpers for the search tool tests: one project tree with
-//! nested sources sharing a token, plus noise the walker skips (a
-//! dotfile and a build-output directory).
+//! Shared helpers for the tool tests: one project tree with nested
+//! sources sharing a token, plus noise the walker skips (a dotfile
+//! and a build-output directory); an empty project for the shell
+//! tests.
+//!
+//! Every test binary compiles this module for itself, so a helper is
+//! "unused" in any binary that happens not to need it. The allow is
+//! the honest contract for a shared fixture surface.
+#![allow(dead_code)]
 
 use std::fs;
 
@@ -29,8 +35,9 @@ pub fn run(name: &str, arguments: Value) -> (TempDir, String) {
     (dir, result.content)
 }
 
-/// A fresh harness over an empty directory, for calls that must fail.
-pub fn failing_harness() -> (TempDir, ToolHarness) {
+/// A fresh harness over an empty directory, for calls that either
+/// must fail or own no project files (the shell tests).
+pub fn empty_harness() -> (TempDir, ToolHarness) {
     let dir = TempDir::new().expect("temp dir");
     let harness = ToolHarness::new(dir.path(), &dir.path().join("undo.jsonl")).expect("harness");
     (dir, harness)

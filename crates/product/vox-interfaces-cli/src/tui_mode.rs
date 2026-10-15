@@ -55,10 +55,15 @@ pub async fn run(cli: &Cli) -> VoxResult<()> {
         config.general.model.clone(),
         Limits::default(),
     )?;
-    // The resumed conversation seeds the surface's history, so the
-    // first prompt continues the stored turns instead of starting
-    // over; a fresh session seeds nothing.
-    let prior = agent.resume_messages()?;
+    // Seeds are a resume's job: the TUI continues a stored
+    // conversation only for --resume. --session merely names the
+    // file to write, so pairing it with an existing id starts
+    // fresh there instead of silently continuing stale turns.
+    let prior = if cli.resume.is_some() {
+        agent.resume_messages()?
+    } else {
+        Vec::new()
+    };
     let header = vox_presentation_tui::Header {
         model: config.general.model,
         session_id: session,
