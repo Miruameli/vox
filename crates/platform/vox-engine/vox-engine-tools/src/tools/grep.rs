@@ -39,7 +39,8 @@ pub fn definition() -> ToolDefinition {
     ToolDefinition {
         name: GREP_TOOL.to_string(),
         description: "Find lines containing a literal substring in project files. \
-                      Returns path:line: content, sorted; at most the limit lines."
+                      Returns path:line: content, ordered by file then line \
+                      number; at most the limit lines."
             .to_string(),
         parameters: serde_json::json!({
             "type": "object",
@@ -91,13 +92,19 @@ impl ToolHarness {
         let mut hits: Vec<String> = if scope.is_file() {
             file_matches(&scope, pattern, self.root())
         } else {
+            // Sorting the file list is what makes the answer stable:
+            // walk order is unspecified by contract, and within one
+            // file lines already arrive in ascending order. A global
+            // string sort would be wrong here - "a.rs:100:" would
+            // outrank "a.rs:11:" lexicographically.
+            let mut files = walk::files(&scope);
+            files.sort();
             let mut hits = Vec::new();
-            for file in walk::files(&scope) {
-                hits.extend(file_matches(&file, pattern, self.root()));
+            for file in &files {
+                hits.extend(file_matches(file, pattern, self.root()));
             }
             hits
         };
-        hits.sort();
 
         let limit = args.limit.unwrap_or(GREP_MATCH_LIMIT).min(GREP_MATCH_LIMIT);
         let hidden = hits.len().saturating_sub(limit);

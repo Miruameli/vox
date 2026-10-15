@@ -20,7 +20,9 @@ pub const GLOB_PATH_LIMIT: usize = 200;
 #[derive(Debug, Deserialize)]
 pub struct GlobArgs {
     /// Pattern with `/`-separated segments; `*` and `?` stay inside
-    /// one segment, `**` spans any number of directories.
+    /// one segment, `**` spans any number of directories. An empty
+    /// pattern is rejected because it matches every path and wastes
+    /// the cap, mirroring the grep tool.
     pub pattern: String,
     /// Directory to search, relative to the project root; defaults
     /// to the whole project.
@@ -67,6 +69,9 @@ impl ToolHarness {
             Ok(args) => args,
             Err(detail) => return Ok(ToolResult::failure(&call.id, detail)),
         };
+        if args.pattern.is_empty() {
+            return Ok(ToolResult::failure(&call.id, "pattern must not be empty"));
+        }
         let scope = match &args.path {
             Some(path) => match resolve_within(self.root(), path) {
                 Ok(scope) => scope,
