@@ -7,6 +7,13 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Fixed
 
+- Onboarding documented the deleted REPL (`vox>` line mode with
+  `/session`, `/sessions`, `/resume`, none of which exist in the
+  TUI) and carried a committed merge-conflict marker; README
+  showed the same stale example. Both now teach the actual TUI
+  entry point (ADR-0012) and the documented session-flag contract
+  ([#36](https://github.com/Miruameli/vox/issues/36)).
+
 - The TUI seeded the stored conversation for plain `--session <id>`
   as well as `--resume <id>`, silently continuing stale turns when
   only the file to write was named; only `--resume` now continues a

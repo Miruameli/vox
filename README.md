@@ -49,13 +49,13 @@ cargo test --workspace
 cargo run -p vox-interfaces-cli -- --help
 ```
 
-Contoh mode interaktif (butuh API key di environment):
+Contoh mode interaktif (butuh API key di environment) - TUI
+adalah entry point default:
 
 ```sh
 OPENAI_API_KEY=... cargo run -p vox-interfaces-cli --
-vox vox-1730000000 | model ... | /help lists commands
-vox> jelaskan arsitektur repo ini
-vox> /quit
+# ketik prompt lalu Enter; Up/Down memanggil prompt sebelumnya;
+# /help menampilkan daftar tombol dan perintah, /quit keluar
 ```
 
 Contoh print mode satu prompt:
