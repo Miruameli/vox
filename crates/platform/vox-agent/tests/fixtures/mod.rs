@@ -1,4 +1,9 @@
 //! Shared fixtures: a scripted mock provider and project scaffolding.
+//!
+//! Every test binary compiles this module for itself, so a helper is
+//! "unused" in any binary that happens not to need it. The allow is
+//! the honest contract for a shared fixture surface.
+#![allow(dead_code)]
 
 use std::collections::VecDeque;
 use std::fs;
@@ -99,6 +104,24 @@ pub fn read_call() -> ToolCall {
         id: "c1".to_string(),
         name: "read".to_string(),
         arguments: json!({"path": "main.rs"}),
+    }
+}
+
+/// A grep call for the seeded project's known token.
+pub fn grep_call() -> ToolCall {
+    ToolCall {
+        id: "c1".to_string(),
+        name: "grep".to_string(),
+        arguments: json!({"pattern": "alpha"}),
+    }
+}
+
+/// A glob call listing Rust sources in the project root.
+pub fn glob_call() -> ToolCall {
+    ToolCall {
+        id: "c1".to_string(),
+        name: "glob".to_string(),
+        arguments: json!({"pattern": "*.rs"}),
     }
 }
 

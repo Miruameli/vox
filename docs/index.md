@@ -29,6 +29,8 @@ an ADR; every operating procedure has a runbook or governance page.
     storage format
   - [ADR-0009](adr/agent-runtime/0009-agent-tool-loop.md) — tool-use
     contract and the agent runtime loop
+  - [ADR-0010](adr/agent-runtime/0010-search-tool-policy.md) — search
+    tools (grep, glob) and their output policy
 - [adr/operations/](adr/operations/) — operations decisions
   - [ADR-0007](adr/operations/0007-configuration-and-trust.md) — layered
     configuration and project trust model

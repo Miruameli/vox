@@ -54,6 +54,6 @@ async fn resume_rebuilds_the_conversation_from_the_session() {
 fn tool_definitions_are_exported_for_providers() {
     let definitions: Vec<ToolDefinition> = vox_engine_tools::definitions();
     let names: Vec<&str> = definitions.iter().map(|d| d.name.as_str()).collect();
-    assert_eq!(names, vec!["read", "edit", "write"]);
+    assert_eq!(names, vec!["read", "edit", "write", "grep", "glob"]);
     assert!(definitions.iter().all(|d| d.parameters.is_object()));
 }

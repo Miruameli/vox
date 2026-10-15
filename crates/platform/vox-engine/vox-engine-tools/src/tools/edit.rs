@@ -4,7 +4,7 @@ use vox_domain::ToolResult;
 use vox_engine_edit::{apply_patch, HashlinePatch};
 
 use crate::harness::ToolHarness;
-use crate::read::parse;
+use crate::tools::read::parse;
 
 /// Tool name as referenced by the model.
 pub const EDIT_TOOL: &str = "edit";
