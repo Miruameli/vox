@@ -39,6 +39,7 @@ impl ToolHarness {
             crate::tools::write::WRITE_TOOL => self.write(call),
             crate::tools::grep::GREP_TOOL => self.grep(call),
             crate::tools::glob::GLOB_TOOL => self.glob(call),
+            crate::tools::shell::bash::BASH_TOOL => self.bash(call),
             other => Ok(ToolResult::failure(
                 &call.id,
                 format!("unknown tool {other}"),

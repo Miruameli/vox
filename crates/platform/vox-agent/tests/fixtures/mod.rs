@@ -125,6 +125,15 @@ pub fn glob_call() -> ToolCall {
     }
 }
 
+/// A bash call echoing a known token from the seeded project.
+pub fn bash_call() -> ToolCall {
+    ToolCall {
+        id: "c1".to_string(),
+        name: "bash".to_string(),
+        arguments: json!({"command": ["echo", "alpha"]}),
+    }
+}
+
 /// A project directory with one seeded file.
 pub fn project() -> TempDir {
     let dir = TempDir::new().expect("temp dir");

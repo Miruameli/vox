@@ -18,6 +18,14 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Added
 
+- `bash` tool (platform layer, ADR-0011): runs one argv array with
+  the project root as working directory, no shell involved, so
+  there is no quoting or string interpolation to get wrong. A
+  timeout is mandatory (default 30s, hard ceiling 60s), output is
+  capped per stream with the cut announced, and a non-zero exit is
+  a result the model reads rather than a tool failure. A command
+  the agent cannot start or that overruns is reported as a failure
+  value the loop can act on.
 - `vox-agent` (platform layer, ADR-0009): the bounded, durable tool-use
   loop. One run is one prompt: request with tools, execute each call
   through the tool harness, append every message/call/result to the

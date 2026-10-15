@@ -42,10 +42,12 @@ each event to a durable JSONL session under the data dir. `--session
 with its full conversation, and Ctrl-C cancels a run at the next safe
 point without ending the session.
 
-The model has five tools: `read`, `edit`, `write` (hashline patching,
-ADR-0005), and the two search tools `grep` (literal substring) and
-`glob` (path patterns) from ADR-0010. Search output is capped and the
-cap is announced, so a run over a large tree stays bounded.
+The model has six tools: `read`, `edit`, `write` (hashline patching,
+ADR-0005), the two search tools `grep` (literal substring) and
+`glob` (path patterns) from ADR-0010, and `bash` (ADR-0011): one
+argv command with a mandatory timeout and capped output. Search
+output is capped and the cap is announced, so a run over a large
+tree stays bounded.
 
 ## 4. Find your first task
 
