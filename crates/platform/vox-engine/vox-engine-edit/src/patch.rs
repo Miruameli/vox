@@ -1,4 +1,4 @@
-//! Line-addressed patch types, validation, and text reconstruction.
+//! Line-addressed patch types and whole-patch validation.
 
 use serde::Deserialize;
 
@@ -110,29 +110,4 @@ impl HashlinePatch {
         }
         Ok(())
     }
-}
-
-/// Split text into line contents plus its terminator and final-newline
-/// state, so a rebuild is byte-identical outside the edited lines.
-pub fn split_lines(text: &str) -> (Vec<String>, &'static str, bool) {
-    let terminator = if text.contains("\r\n") { "\r\n" } else { "\n" };
-    let ends_with_newline = text.ends_with('\n');
-    let lines = text
-        .lines()
-        .map(|line| line.strip_suffix('\r').unwrap_or(line).to_string())
-        .collect();
-    (lines, terminator, ends_with_newline)
-}
-
-/// Rebuild text from line contents with the original terminator and
-/// final-newline state.
-pub fn join_lines(lines: &[String], terminator: &str, ends_with_newline: bool) -> String {
-    if lines.is_empty() {
-        return String::new();
-    }
-    let mut text = lines.join(terminator);
-    if ends_with_newline {
-        text.push_str(terminator);
-    }
-    text
 }

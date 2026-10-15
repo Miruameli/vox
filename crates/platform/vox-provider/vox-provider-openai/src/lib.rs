@@ -1,9 +1,15 @@
-//! OpenAI-compatible streaming provider adapter.
+//! OpenAI-compatible streaming provider, non-streaming completion with
+//! tool calling, and the wire mapping that carries both.
+//!
+//! The wire shapes are internal: consumers of this crate speak the
+//! [`vox_domain`] contract (messages, tool calls) and own nothing but
+//! [`OpenAiClient`] and its [`ModelProvider`](vox_domain::provider::ModelProvider)
+//! implementation.
 
-pub mod client;
+mod client;
 mod consume;
-pub mod stream;
-pub mod wire;
+mod stream;
+mod wire;
 
 pub use client::OpenAiClient;
 

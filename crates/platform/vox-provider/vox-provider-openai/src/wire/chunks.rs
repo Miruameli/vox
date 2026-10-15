@@ -6,8 +6,6 @@ use vox_domain::completion::Usage;
 /// Incoming stream chunk.
 #[derive(Debug, Deserialize)]
 pub struct ChatChunk {
-    /// Model name reported by the provider.
-    pub model: Option<String>,
     /// One or more choices; streaming yields exactly one.
     pub choices: Vec<ChunkChoice>,
     /// Usage, present on the final chunk when requested.

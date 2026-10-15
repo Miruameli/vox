@@ -1,7 +1,3 @@
-//! Read tool round trips: hashed views with absolute numbers, paging
-//! bounds, oversized pages, and parity with the engine's whole-file
-//! view.
-
 //! Tool-call round trips over the harness: read paging, edit with
 //! anchor verification, atomic writes, and the parity of the read view
 //! with the engine's whole-file hashed view.
@@ -100,4 +96,16 @@ fn read_view_range_matches_the_engine_whole_file_view() {
         hashed_view_range(file, 1, usize::MAX).expect("range"),
         hashed_view(file)
     );
+}
+
+#[test]
+fn empty_file_reads_as_an_empty_view() {
+    let dir = TempDir::new().expect("temp dir");
+    fs::write(dir.path().join("empty.txt"), "").expect("seed");
+    let mut harness =
+        ToolHarness::new(dir.path(), &dir.path().join("undo.jsonl")).expect("harness");
+    let result = harness
+        .call(&call("read", "c1", json!({"path": "empty.txt"})))
+        .expect("run");
+    assert_eq!(result.content, "");
 }
