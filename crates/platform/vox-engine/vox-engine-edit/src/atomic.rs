@@ -14,26 +14,28 @@ static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 ///
 /// The bytes land in a temporary file in the target directory, are
 /// flushed and synced, and only then does `rename` put them in place.
-/// Any failure removes the temporary file and leaves the original file
+/// Any failure - writing the temporary file or the rename itself -
+/// removes the temporary file and leaves the original file
 /// byte-for-byte intact.
 pub fn write_atomic(path: &Path, content: &str) -> VoxResult<()> {
     let parent = path.parent().ok_or_else(|| VoxError::Edit {
         detail: format!("{} has no parent directory", path.display()),
     })?;
     let temp = temp_path(parent, path);
-    let write = |temp: &Path| -> VoxResult<()> {
-        let mut file = fs::File::create(temp).map_err(VoxError::from)?;
+    let result = (|| {
+        let mut file = fs::File::create(&temp).map_err(VoxError::from)?;
         file.write_all(content.as_bytes()).map_err(VoxError::from)?;
         file.flush().map_err(VoxError::from)?;
         file.sync_all().map_err(VoxError::from)?;
-        Ok(())
-    };
-    write(&temp)?;
-    if let Err(error) = fs::rename(&temp, path) {
+        drop(file);
+        fs::rename(&temp, path).map_err(VoxError::from)
+    })();
+    if result.is_err() {
+        // The rename may have consumed the temporary file; a failing
+        // removal is then expected and stays ignored.
         let _ = fs::remove_file(&temp);
-        return Err(VoxError::from(error));
     }
-    Ok(())
+    result
 }
 
 /// Temporary sibling of `path` inside `parent`.
@@ -92,5 +94,26 @@ mod tests {
         fs::write(&target, "old").expect("seed");
         write_atomic(&target, "new").expect("overwrite");
         assert_eq!(fs::read_to_string(&target).expect("read"), "new");
+    }
+
+    #[test]
+    fn write_failure_leaves_no_temporary_file() {
+        let dir = temp_dir("write-fail");
+        // A file where the parent directory should be makes the
+        // temporary create fail deterministically (ENOTDIR).
+        let blocked = dir.join("blocked");
+        fs::write(&blocked, "not a directory").expect("block");
+        let target = blocked.join("file.txt");
+        assert!(write_atomic(&target, "payload").is_err());
+        let leftovers: Vec<_> = fs::read_dir(&dir)
+            .expect("list dir")
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_name().to_string_lossy().contains("vox-tmp"))
+            .collect();
+        assert!(leftovers.is_empty(), "temporary files must be cleaned up");
+        assert_eq!(
+            fs::read_to_string(&blocked).expect("read"),
+            "not a directory"
+        );
     }
 }
