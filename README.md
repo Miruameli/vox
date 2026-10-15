@@ -34,7 +34,7 @@ intelligence, subagents, durable sessions — but stays a coding terminal.
 - Mode interaktif (`vox` tanpa argumen) dengan siklus tool penuh, sesi durable, resume, dan Ctrl-C — sudah jalan
 - Print mode streaming (`vox -p`) terhadap provider OpenAI-compatible — sudah jalan
 - Edit engine ber-anchor content hash (hashline), apply atomik — sudah jalan
-- Tool harness: read/write/edit hashline jalan; grep/glob/bash + LSP + DAP berikutnya
+- Tool harness: read/write/edit hashline + grep/glob (capped, ADR-0010) jalan; bash + LSP + DAP berikutnya
 - Agent loop: siklus tool-use bounded + durable jalan (vox-agent, ADR-0009)
 - Subagent, konfigurasi berlapis dengan model kepercayaan eksplisit — konfigurasi sudah jalan; sesi durable sudah jalan (vox-session); subagent berikutnya
 - TUI interaktif, ACP/RPC untuk editor
