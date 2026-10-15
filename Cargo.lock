@@ -1427,7 +1427,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "vox-domain",
- "vox-engine-edit",
  "vox-engine-tools",
  "vox-session",
  "vox-shared",
