@@ -7,6 +7,16 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Added
 
+- `vox-agent` (platform layer, ADR-0009): the bounded, durable tool-use
+  loop. One run is one prompt: request with tools, execute each call
+  through the tool harness, append every message/call/result to the
+  session before the next request. Bounds cap turns (25) and
+  consecutive tool failures (3); a shared flag cancels between actions;
+  resume rebuilds the conversation from the file. The provider contract
+  gained `CompletionRequest.tools` and `ModelProvider.complete()`
+  returning `AssistantTurn`; the OpenAI adapter maps tool calls to the
+  wire `tool_calls` array and tool results to `tool` role messages
+  (new `wire/` module split), verified by recorded-vector tests.
 - `vox-session` (platform layer, ADR-0006): durable append-only JSONL
   session storage. One event per line with a monotonic sequence and
   timestamp; messages, tool calls and results, applied edits, undos,

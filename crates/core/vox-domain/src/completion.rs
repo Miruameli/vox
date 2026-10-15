@@ -15,16 +15,34 @@ pub struct CompletionRequest {
     pub max_tokens: Option<u32>,
     /// Whether the response is streamed incrementally.
     pub stream: bool,
+    /// Tool definitions offered to the model, when any.
+    pub tools: Option<Vec<crate::tool::ToolDefinition>>,
 }
 
 impl CompletionRequest {
-    /// Build a streaming request with no token cap.
+    /// Build a streaming request with no token cap and no tools.
     pub fn streaming(model: impl Into<String>, messages: Vec<Message>) -> Self {
         Self {
             model: model.into(),
             messages,
             max_tokens: None,
             stream: true,
+            tools: None,
+        }
+    }
+
+    /// Build a non-streaming request with tools for the tool-use loop.
+    pub fn with_tools(
+        model: impl Into<String>,
+        messages: Vec<Message>,
+        tools: Vec<crate::tool::ToolDefinition>,
+    ) -> Self {
+        Self {
+            model: model.into(),
+            messages,
+            max_tokens: None,
+            stream: false,
+            tools: Some(tools),
         }
     }
 }
@@ -36,6 +54,18 @@ pub struct Usage {
     pub input_tokens: u32,
     /// Tokens produced by the model.
     pub output_tokens: u32,
+}
+
+/// One non-streaming assistant turn: the assembled message plus the
+/// provider's finish reason and token accounting.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AssistantTurn {
+    /// The assistant message, carrying text and any tool calls.
+    pub message: Message,
+    /// Provider finish reason, when reported (`stop`, `tool_calls`).
+    pub finish_reason: Option<String>,
+    /// Token usage, when reported.
+    pub usage: Option<Usage>,
 }
 
 /// Events emitted while streaming a completion.

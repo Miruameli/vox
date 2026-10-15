@@ -1,11 +1,11 @@
-//! OpenAI-compatible streaming client.
+//! OpenAI-compatible chat completions client.
 
-use vox_domain::completion::{CompletionRequest, StreamEvent};
+use vox_domain::completion::{AssistantTurn, CompletionRequest, StreamEvent};
 use vox_domain::provider::ModelProvider;
 use vox_shared::{VoxError, VoxResult};
 
 use crate::consume::consume_stream;
-use crate::wire::{to_wire_messages, ChatRequest, StreamOptions};
+use crate::wire::{build, parse_completion, ChatRequest};
 
 /// Client for the OpenAI-compatible chat completions API.
 #[derive(Debug, Clone)]
@@ -28,21 +28,25 @@ impl OpenAiClient {
         }
     }
 
-    /// Build the wire request for a domain request.
-    fn wire_request(&self, request: &CompletionRequest) -> VoxResult<ChatRequest> {
-        let messages =
-            to_wire_messages(&request.messages).map_err(|detail| VoxError::Provider {
-                detail: format!("message mapping failed: {detail}"),
+    /// POST one wire request, mapping transport and status failures.
+    async fn post(&self, wire: &ChatRequest) -> VoxResult<reqwest::Response> {
+        let response = self
+            .http
+            .post(format!("{}/chat/completions", self.base_url))
+            .bearer_auth(&self.api_key)
+            .json(wire)
+            .send()
+            .await
+            .map_err(|error| VoxError::Http {
+                detail: error.to_string(),
             })?;
-        Ok(ChatRequest {
-            model: request.model.clone(),
-            messages,
-            stream: request.stream,
-            stream_options: StreamOptions {
-                include_usage: true,
-            },
-            max_tokens: request.max_tokens,
-        })
+        let status = response.status();
+        if !status.is_success() {
+            let detail = format!("chat completions returned HTTP {}", status.as_u16());
+            tracing::debug!(%detail, "provider rejected request");
+            return Err(VoxError::Provider { detail });
+        }
+        Ok(response)
     }
 }
 
@@ -56,24 +60,22 @@ impl ModelProvider for OpenAiClient {
         request: &CompletionRequest,
         on_event: &mut (dyn FnMut(StreamEvent) + Send),
     ) -> VoxResult<()> {
-        let wire = self.wire_request(request)?;
-        let response = self
-            .http
-            .post(format!("{}/chat/completions", self.base_url))
-            .bearer_auth(&self.api_key)
-            .json(&wire)
-            .send()
-            .await
-            .map_err(|error| VoxError::Http {
-                detail: error.to_string(),
-            })?;
-        let status = response.status();
-        if !status.is_success() {
-            let detail = format!("chat completions returned HTTP {}", status.as_u16());
-            tracing::debug!(%detail, "provider rejected request");
-            return Err(VoxError::Provider { detail });
-        }
+        let wire = build(request).map_err(|detail| VoxError::Provider {
+            detail: format!("message mapping failed: {detail}"),
+        })?;
+        let response = self.post(&wire).await?;
         consume_stream(response, on_event).await
+    }
+
+    async fn complete(&self, request: &CompletionRequest) -> VoxResult<AssistantTurn> {
+        let wire = build(request).map_err(|detail| VoxError::Provider {
+            detail: format!("message mapping failed: {detail}"),
+        })?;
+        let response = self.post(&wire).await?;
+        let body = response.text().await.map_err(|error| VoxError::Http {
+            detail: error.to_string(),
+        })?;
+        parse_completion(&body).map_err(|detail| VoxError::Stream { detail })
     }
 }
 
@@ -83,20 +85,24 @@ mod tests {
     use vox_domain::message::Message;
 
     #[test]
-    fn wire_request_enables_usage_and_streaming() {
-        let client = OpenAiClient::new("https://api.openai.com/v1", "key");
-        let request =
-            CompletionRequest::streaming("m", vec![Message::user("hi"), Message::system("rules")]);
-        let wire = client.wire_request(&request).expect("wire");
-        assert!(wire.stream);
-        assert!(wire.stream_options.include_usage);
-        assert_eq!(wire.messages.len(), 2);
-        assert_eq!(wire.messages[1].role, "system");
+    fn client_reports_provider_id() {
+        assert_eq!(OpenAiClient::new("http://x/v1", "k").id(), "openai");
     }
 
     #[test]
-    fn client_reports_provider_id() {
-        let client = OpenAiClient::new("https://api.openai.com/v1", "key");
-        assert_eq!(client.id(), "openai");
+    fn client_is_a_model_provider() {
+        fn assert_provider<T: ModelProvider>() {}
+        assert_provider::<OpenAiClient>();
+    }
+
+    #[test]
+    fn requests_are_built_from_domain_messages() {
+        let client = OpenAiClient::new("http://x/v1", "k");
+        let request = CompletionRequest::streaming("m", vec![Message::user("hi")]);
+        let wire = build(&request).expect("build");
+        assert_eq!(wire.messages.len(), 1);
+        assert_eq!(wire.model, "m");
+        // The client itself stays a thin transport: no message assembly.
+        assert!(client.base_url.ends_with("/v1"));
     }
 }

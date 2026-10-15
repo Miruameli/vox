@@ -4,12 +4,12 @@ use std::future::Future;
 
 use vox_shared::{VoxError, VoxResult};
 
-use crate::completion::{CompletionRequest, StreamEvent};
+use crate::completion::{AssistantTurn, CompletionRequest, StreamEvent};
 
 /// A model provider able to stream completions.
 ///
 /// Implementations live in `platform/` crates and translate between this
-/// domain contract and their wire protocol. The method returns a future so
+/// domain contract and their wire protocol. The methods return futures so
 /// auto-trait bounds can be expressed (see `Send` below).
 pub trait ModelProvider: Send + Sync {
     /// Stable identifier of the provider, for example `openai`.
@@ -25,6 +25,15 @@ pub trait ModelProvider: Send + Sync {
         request: &CompletionRequest,
         on_event: &mut (dyn FnMut(StreamEvent) + Send),
     ) -> impl Future<Output = VoxResult<()>> + Send;
+
+    /// Complete one non-streaming turn with tools, for the agent loop.
+    ///
+    /// The response carries the full assistant message including tool
+    /// calls; the loop dispatches them and sends the results back.
+    fn complete(
+        &self,
+        request: &CompletionRequest,
+    ) -> impl Future<Output = VoxResult<AssistantTurn>> + Send;
 }
 
 /// Error returned when a message cannot be mapped to the provider's wire

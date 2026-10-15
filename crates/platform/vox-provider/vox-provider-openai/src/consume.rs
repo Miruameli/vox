@@ -5,7 +5,7 @@ use vox_domain::completion::{StreamEvent, Usage};
 use vox_shared::{VoxError, VoxResult};
 
 use crate::stream::SseDecoder;
-use crate::wire::{ChatChunk, DONE_SENTINEL};
+use crate::wire::{ChatChunk, WireUsage, DONE_SENTINEL};
 
 /// Read the SSE body and emit domain stream events.
 ///
@@ -33,7 +33,7 @@ pub(crate) async fn consume_stream(
                     detail: format!("chunk decode failed: {error}"),
                 })?;
             if parsed.usage.is_some() {
-                usage = parsed.usage.as_ref().map(convert_usage);
+                usage = parsed.usage.as_ref().map(WireUsage::to_domain);
             }
             for choice in parsed.choices {
                 if let Some(text) = choice.delta.content {
@@ -56,14 +56,6 @@ pub(crate) async fn consume_stream(
         finish(&mut completed, None, usage, on_event);
     }
     Ok(())
-}
-
-/// Convert wire usage to domain usage.
-fn convert_usage(usage: &crate::wire::WireUsage) -> Usage {
-    Usage {
-        input_tokens: usage.prompt_tokens,
-        output_tokens: usage.completion_tokens,
-    }
 }
 
 /// Emit the single completion event, logging duplicates.
