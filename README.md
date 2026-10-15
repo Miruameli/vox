@@ -32,7 +32,7 @@ intelligence, subagents, durable sessions — but stays a coding terminal.
 ## Fitur yang direncanakan / planned features
 
 - Print mode streaming (`vox -p`) terhadap provider OpenAI-compatible — sudah jalan
-- Edit engine ber-anchor content hash (hashline), apply atomik
+- Edit engine ber-anchor content hash (hashline), apply atomik — sudah jalan
 - Tool harness: read/write/edit/grep/glob/bash + LSP + DAP
 - Subagent, sesi durable, konfigurasi berlapis dengan model kepercayaan eksplisit
 - TUI interaktif, ACP/RPC untuk editor

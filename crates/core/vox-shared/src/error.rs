@@ -32,6 +32,11 @@ pub enum VoxError {
         /// Diagnostic detail for the log; never user-facing.
         detail: String,
     },
+    /// An edit engine patch was rejected or could not be applied.
+    Edit {
+        /// Diagnostic detail for the log; never user-facing.
+        detail: String,
+    },
     /// The HTTP transport itself failed.
     Http {
         /// Diagnostic detail for the log; never user-facing.
@@ -52,6 +57,7 @@ impl VoxError {
             | Self::Credential { detail }
             | Self::Provider { detail }
             | Self::Stream { detail }
+            | Self::Edit { detail }
             | Self::Http { detail } => detail.clone(),
             Self::Io(error) => error.to_string(),
         }
@@ -65,6 +71,7 @@ impl fmt::Display for VoxError {
             Self::Credential { .. } => "credential not configured",
             Self::Provider { .. } => "provider request failed",
             Self::Stream { .. } => "stream decode failed",
+            Self::Edit { .. } => "edit rejected",
             Self::Http { .. } => "network error",
             Self::Io(_) => "local I/O error",
         };

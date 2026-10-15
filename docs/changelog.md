@@ -7,6 +7,13 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Added
 
+- `vox-engine-edit` (platform layer, ADR-0005): hashline edit engine.
+  Patches anchor every addressed line to its 64-bit BLAKE3 content
+  hash; a stale anchor rejects the whole patch before the file is
+  touched. Writes are atomic (temp file, fsync, rename) with an
+  append-only JSONL undo journal of pre-images. Path resolution
+  refuses traversal outside the project root, and CRLF files keep
+  their terminator.
 - Repository foundation: MIT license, CI pipeline, dependabot, PR template.
 - Architecture decision records ADR-0001 through ADR-0008 covering the
   Rust-native rewrite, crate layout, async stack, provider abstraction,
