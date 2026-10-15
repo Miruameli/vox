@@ -34,7 +34,7 @@ intelligence, subagents, durable sessions — but stays a coding terminal.
 - Print mode streaming (`vox -p`) terhadap provider OpenAI-compatible — sudah jalan
 - Edit engine ber-anchor content hash (hashline), apply atomik — sudah jalan
 - Tool harness: read/write/edit hashline jalan; grep/glob/bash + LSP + DAP berikutnya
-- Subagent, sesi durable, konfigurasi berlapis dengan model kepercayaan eksplisit
+- Subagent, konfigurasi berlapis dengan model kepercayaan eksplisit — konfigurasi sudah jalan; sesi durable sudah jalan (vox-session); subagent berikutnya
 - TUI interaktif, ACP/RPC untuk editor
 
 ## Build / Menjalankan

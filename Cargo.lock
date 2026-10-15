@@ -1477,6 +1477,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "vox-session"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "vox-domain",
+ "vox-shared",
+]
+
+[[package]]
 name = "vox-shared"
 version = "0.1.0"
 dependencies = [

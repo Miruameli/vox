@@ -6,6 +6,7 @@ members = [
     "crates/core/vox-shared",
     "crates/platform/vox-engine/vox-engine-edit",
     "crates/platform/vox-engine/vox-engine-tools",
+    "crates/platform/vox-session",
     "crates/platform/vox-provider/vox-provider-openai",
     "crates/product/vox-interfaces-cli",
 ]
