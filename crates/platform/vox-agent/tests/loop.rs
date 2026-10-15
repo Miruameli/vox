@@ -112,3 +112,25 @@ async fn a_resumed_run_sends_prior_messages_before_the_prompt() {
     assert_eq!(messages[1], prior[1]);
     assert_eq!(messages[2].text_content(), "follow up");
 }
+
+#[tokio::test]
+async fn a_second_run_continues_the_same_conversation() {
+    // An interactive session calls run() per input line; the second
+    // prompt must reach the provider with the whole conversation.
+    let dir = project();
+    let (mut agent, requests) = agent_recording(
+        &dir,
+        vec![stop_turn("first answer"), stop_turn("second answer")],
+    );
+    agent.run("prompt one", &mut |_| {}).await.expect("first");
+    agent.run("prompt two", &mut |_| {}).await.expect("second");
+
+    let log = requests.lock().expect("lock");
+    assert_eq!(log.len(), 2);
+    let second = log.last().expect("second request");
+    let roles: Vec<Role> = second.messages.iter().map(|m| m.role).collect();
+    assert_eq!(roles, vec![Role::User, Role::Assistant, Role::User]);
+    assert_eq!(second.messages[0].text_content(), "prompt one");
+    assert!(second.messages[1].text_content().contains("first answer"));
+    assert_eq!(second.messages[2].text_content(), "prompt two");
+}
