@@ -36,7 +36,8 @@ pub fn role_name(role: Role) -> &'static str {
 /// One domain message can yield several wire messages: assistant tool
 /// calls ride the `tool_calls` array, and each tool result becomes its
 /// own `tool` role message keyed by call id. Text content is
-/// concatenated across text blocks.
+/// concatenated across text blocks and rides its own message whenever
+/// the message does not exist only to carry tool results.
 pub fn to_wire_messages(messages: &[Message]) -> Result<Vec<WireMessage>, String> {
     let mut wire = Vec::new();
     for message in messages {
@@ -63,7 +64,12 @@ pub fn to_wire_messages(messages: &[Message]) -> Result<Vec<WireMessage>, String
                 }
             }
         }
-        if !text.is_empty() || tool_calls.is_empty() && results.is_empty() {
+        // Text rides its own message unless the domain message exists
+        // only to carry tool results: their content is the result
+        // payload, and a calls-only turn with no text emits the call
+        // array alone. The explicit `&&` pins the precedence: no
+        // parenthesised surprise when this is read later.
+        if !text.is_empty() && results.is_empty() {
             wire.push(WireMessage {
                 role: role_name(message.role).to_string(),
                 content: Some(text),
