@@ -7,6 +7,14 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Added
 
+- `vox-engine-tools` (platform layer): the read, edit, and write tools
+  over the edit engine. `ToolHarness` dispatches `ToolCall`s against a
+  project root with one undo journal: read returns hashed paged views
+  with absolute line numbers (capped pages, parity with the engine's
+  whole-file view pinned by test); edit deserializes a `HashlinePatch`
+  and applies it, surfacing anchor mismatches as model-facing tool
+  results; write creates or replaces atomically with a journaled
+  pre-image. Unknown tools and path traversal are refused.
 - `vox-engine-edit` (platform layer, ADR-0005): hashline edit engine.
   Patches anchor every addressed line to its 64-bit BLAKE3 content
   hash; a stale anchor rejects the whole patch before the file is

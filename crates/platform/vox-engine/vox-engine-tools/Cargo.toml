@@ -1,0 +1,21 @@
+[package]
+name = "vox-engine-tools"
+description = "Read, edit, and write tools over the hashline edit engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+vox-domain = { version = "0.1.0", path = "../../../core/vox-domain" }
+vox-engine-edit = { version = "0.1.0", path = "../vox-engine-edit" }
+vox-shared = { version = "0.1.0", path = "../../../core/vox-shared" }
+
+[dev-dependencies]
+tempfile = "3.23.0"

@@ -1438,6 +1438,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "vox-engine-tools"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tempfile",
+ "vox-domain",
+ "vox-engine-edit",
+ "vox-shared",
+]
+
+[[package]]
 name = "vox-interfaces-cli"
 version = "0.1.0"
 dependencies = [
