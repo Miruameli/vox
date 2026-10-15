@@ -69,15 +69,17 @@ fn is_allowed_base_url(url: &str) -> bool {
         .unwrap_or_default()
         .to_lowercase();
     let host = host.split('@').next_back().unwrap_or(&host);
-    let host = host.split(':').next().unwrap_or(host);
+    // A bracketed IPv6 literal carries its port after the closing
+    // bracket; splitting on ':' first would cut the host at '['.
+    let host = if let Some(rest) = host.strip_prefix('[') {
+        rest.split(']').next().unwrap_or(rest)
+    } else {
+        host.split(':').next().unwrap_or(host)
+    };
     match scheme {
         "https" => !host.is_empty(),
         "http" => {
-            host == "localhost"
-                || host == "::1"
-                || host == "[::1]"
-                || host == "127.0.0.1"
-                || host.starts_with("127.")
+            host == "localhost" || host == "::1" || host == "127.0.0.1" || host.starts_with("127.")
         }
         _ => false,
     }
@@ -98,6 +100,13 @@ mod tests {
         assert!(!is_allowed_base_url("ftp://example.com"));
         assert!(!is_allowed_base_url("example.com"));
         assert!(!is_allowed_base_url("https://exa mple.com"));
+    }
+
+    #[test]
+    fn bracketed_ipv6_loopback_is_allowed() {
+        assert!(is_allowed_base_url("http://[::1]:1234/v1"));
+        assert!(is_allowed_base_url("http://[::1]/v1"));
+        assert!(!is_allowed_base_url("http://[fe80::1]:8080/v1"));
     }
 
     #[test]
