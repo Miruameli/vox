@@ -7,6 +7,13 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Added
 
+- `vox-session` (platform layer, ADR-0006): durable append-only JSONL
+  session storage. One event per line with a monotonic sequence and
+  timestamp; messages, tool calls and results, applied edits, undos,
+  and session metadata (with a `parent` link for subagents). Writes
+  are `O_APPEND` and synced per event; replay tolerates a torn trailing
+  write and rejects corruption before it; every string leaf is redacted
+  before it reaches disk; session ids are validated as plain file names.
 - `vox-engine-tools` (platform layer): the read, edit, and write tools
   over the edit engine. `ToolHarness` dispatches `ToolCall`s against a
   project root with one undo journal: read returns hashed paged views
