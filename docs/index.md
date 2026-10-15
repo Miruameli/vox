@@ -31,6 +31,8 @@ an ADR; every operating procedure has a runbook or governance page.
     contract and the agent runtime loop
   - [ADR-0010](adr/agent-runtime/0010-search-tool-policy.md) — search
     tools (grep, glob) and their output policy
+  - [ADR-0011](adr/agent-runtime/0011-bash-tool.md) — the bash tool:
+    argv execution, mandatory timeout, capped output
 - [adr/operations/](adr/operations/) — operations decisions
   - [ADR-0007](adr/operations/0007-configuration-and-trust.md) — layered
     configuration and project trust model
