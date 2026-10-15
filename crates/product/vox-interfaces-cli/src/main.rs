@@ -2,6 +2,8 @@
 
 mod cli;
 mod print_mode;
+mod repl;
+mod runtime;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -29,10 +31,7 @@ fn run() -> VoxResult<()> {
     match (&cli.command, &cli.prompt) {
         (Some(Command::Config), _) => run_config(&cli),
         (None, Some(prompt)) => runtime.block_on(print_mode::run(&cli, prompt)),
-        (None, None) => {
-            eprintln!("vox: no prompt given; use -p <PROMPT> or see --help");
-            std::process::exit(2);
-        }
+        (None, None) => runtime.block_on(repl::run(&cli)),
     }
 }
 

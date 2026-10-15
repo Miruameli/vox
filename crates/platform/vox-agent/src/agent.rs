@@ -24,6 +24,7 @@ pub struct Agent<P: ModelProvider> {
     model: String,
     limits: Limits,
     cancelled: Arc<AtomicBool>,
+    prior: Vec<Message>,
 }
 
 impl<P: ModelProvider> Agent<P> {
@@ -44,11 +45,17 @@ impl<P: ModelProvider> Agent<P> {
             model: model.into(),
             limits,
             cancelled: Arc::new(AtomicBool::new(false)),
+            prior: Vec::new(),
         })
     }
 
-    /// A cancellation flag shared with the UI; set it to stop at the
-    /// next safe point (between provider turns and tool calls).
+    /// Seed the conversation for a resumed run.
+    pub fn with_prior(mut self, prior: Vec<Message>) -> Self {
+        self.prior = prior;
+        self
+    }
+
+    /// Shared cancellation flag; set it to stop between actions.
     pub fn cancel_token(&self) -> Arc<AtomicBool> {
         Arc::clone(&self.cancelled)
     }
@@ -73,7 +80,8 @@ impl<P: ModelProvider> Agent<P> {
         self.session.append(EventKind::Message {
             message: user.clone(),
         })?;
-        let mut messages = vec![user];
+        let mut messages = std::mem::take(&mut self.prior);
+        messages.push(user);
         let mut consecutive_tool_errors = 0usize;
 
         for turn in 1..=self.limits.max_turns {
