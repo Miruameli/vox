@@ -119,8 +119,11 @@ pub fn apply_patch(
         lines_removed: removed,
         created: false,
     };
-    atomic::write_atomic(&path, &updated)?;
+    // Journal before the write: a failed record aborts before the file
+    // changes, and a failed write leaves a record whose pre-image
+    // equals the current content, making rollback a no-op.
     undo.record_edit(&path, Some(original))?;
+    atomic::write_atomic(&path, &updated)?;
     Ok(summary)
 }
 
@@ -146,7 +149,8 @@ pub fn write_whole_file(
             .unwrap_or(0),
         created,
     };
-    atomic::write_atomic(&path, content)?;
+    // Same journal-before-write ordering as apply_patch.
     undo.record_edit(&path, pre_image)?;
+    atomic::write_atomic(&path, content)?;
     Ok(summary)
 }
