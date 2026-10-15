@@ -34,9 +34,11 @@ impl ToolHarness {
     /// generic.
     pub fn call(&mut self, call: &ToolCall) -> VoxResult<ToolResult> {
         match call.name.as_str() {
-            crate::read::READ_TOOL => self.read(call),
-            crate::edit::EDIT_TOOL => self.edit(call),
-            crate::write::WRITE_TOOL => self.write(call),
+            crate::tools::read::READ_TOOL => self.read(call),
+            crate::tools::edit::EDIT_TOOL => self.edit(call),
+            crate::tools::write::WRITE_TOOL => self.write(call),
+            crate::tools::grep::GREP_TOOL => self.grep(call),
+            crate::tools::glob::GLOB_TOOL => self.glob(call),
             other => Ok(ToolResult::failure(
                 &call.id,
                 format!("unknown tool {other}"),

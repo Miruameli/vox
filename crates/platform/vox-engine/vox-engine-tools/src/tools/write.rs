@@ -5,7 +5,7 @@ use vox_domain::ToolResult;
 use vox_engine_edit::write_whole_file;
 
 use crate::harness::ToolHarness;
-use crate::read::parse;
+use crate::tools::read::parse;
 
 /// Tool name as referenced by the model.
 pub const WRITE_TOOL: &str = "write";
