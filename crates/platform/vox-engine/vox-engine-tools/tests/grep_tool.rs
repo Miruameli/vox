@@ -8,7 +8,7 @@ use serde_json::json;
 use tempfile::TempDir;
 use vox_engine_tools::{ToolHarness, GREP_MATCH_LIMIT};
 
-use fixtures::{call, failing_harness, run};
+use fixtures::{call, empty_harness, run};
 
 #[test]
 fn grep_finds_every_match_with_line_numbers() {
@@ -82,7 +82,7 @@ fn grep_orders_lines_numerically_within_a_file() {
 
 #[test]
 fn grep_rejects_paths_outside_the_root() {
-    let (_dir, mut harness) = failing_harness();
+    let (_dir, mut harness) = empty_harness();
     let result = harness
         .call(&call(
             "grep",
@@ -95,7 +95,7 @@ fn grep_rejects_paths_outside_the_root() {
 
 #[test]
 fn unknown_tools_stay_failures() {
-    let (_dir, mut harness) = failing_harness();
+    let (_dir, mut harness) = empty_harness();
     let result = harness.call(&call("sed", json!({}))).expect("unknown tool");
     assert!(result.is_error);
     assert!(result.content.contains("unknown tool"));

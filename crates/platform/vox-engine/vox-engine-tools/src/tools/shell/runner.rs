@@ -15,8 +15,15 @@ use crate::tools::shell::pipes;
 /// How often the waiter checks whether the child exited.
 const POLL_INTERVAL: Duration = Duration::from_millis(20);
 
-/// Grace after a kill for the pipes to close on their own.
-const KILL_GRACE: Duration = Duration::from_millis(200);
+/// Grace for trailing pipe bytes once the command's life is over.
+///
+/// The command's own output was written before it exited (or was
+/// killed), so everything attributable to it is in the pipe
+/// buffer within scheduling jitter. A descendant that holds the
+/// write end open is not the command: waiting longer would let
+/// `sh -c "sleep 30 & echo started"` hold the tool for the whole
+/// budget although its answer was ready immediately.
+const OUTPUT_GRACE: Duration = Duration::from_millis(250);
 
 /// The outcome of one finished or killed command.
 pub(crate) enum Outcome {
@@ -56,7 +63,12 @@ pub(crate) fn run(
         match child.try_wait() {
             Ok(Some(status)) => {
                 let code = status.code().unwrap_or(-1);
-                let (stdout, stderr, complete) = pipes::collect(&rx, deadline);
+                // The command is done: everything it produced is
+                // already in the pipe buffers, so a short grace is
+                // enough. Waiting for the full deadline here would
+                // hand the budget to any descendant holding the
+                // write end open.
+                let (stdout, stderr, complete) = pipes::collect(&rx, Instant::now() + OUTPUT_GRACE);
                 return Ok(Outcome::Exited {
                     code,
                     stdout,
@@ -72,7 +84,7 @@ pub(crate) fn run(
             Ok(None) => {
                 let _ = child.kill();
                 let _ = child.wait();
-                let _ = pipes::collect(&rx, Instant::now() + KILL_GRACE);
+                let _ = pipes::collect(&rx, Instant::now() + OUTPUT_GRACE);
                 return Ok(Outcome::TimedOut);
             }
             Err(_) => return Ok(Outcome::TimedOut),
