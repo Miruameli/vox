@@ -1,0 +1,17 @@
+# Build artifacts / target
+/target
+
+# Environment and secrets / JANGAN commit
+.env
+.env.*
+!.env.example
+
+# Editor and OS noise
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local scratch
+/tmp/
+*.log
