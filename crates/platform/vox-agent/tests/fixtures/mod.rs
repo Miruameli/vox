@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 use std::fs;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use serde_json::json;
 use tempfile::TempDir;
@@ -17,14 +17,26 @@ use vox_shared::VoxResult;
 /// A provider replaying scripted turns, then failing loudly.
 pub struct MockProvider {
     turns: Mutex<VecDeque<AssistantTurn>>,
+    requests: Arc<Mutex<Vec<CompletionRequest>>>,
 }
+
+/// A shared recorder of provider requests, readable after the agent
+/// (and its provider) are gone.
+pub type RequestLog = Arc<Mutex<Vec<CompletionRequest>>>;
 
 impl MockProvider {
     /// Script the turns in order.
     pub fn scripted(turns: Vec<AssistantTurn>) -> Self {
         Self {
             turns: Mutex::new(turns.into_iter().collect()),
+            requests: Arc::new(Mutex::new(Vec::new())),
         }
+    }
+
+    /// A handle on the recorded requests, valid after the provider
+    /// moves into the agent.
+    pub fn recorder(&self) -> RequestLog {
+        Arc::clone(&self.requests)
     }
 }
 
@@ -41,7 +53,8 @@ impl ModelProvider for MockProvider {
         Ok(())
     }
 
-    async fn complete(&self, _request: &CompletionRequest) -> VoxResult<AssistantTurn> {
+    async fn complete(&self, request: &CompletionRequest) -> VoxResult<AssistantTurn> {
+        self.requests.lock().expect("lock").push(request.clone());
         self.turns
             .lock()
             .expect("lock")
@@ -98,13 +111,24 @@ pub fn project() -> TempDir {
 
 /// An agent over the project with a scripted provider.
 pub fn agent(dir: &TempDir, turns: Vec<AssistantTurn>) -> Agent<MockProvider> {
+    agent_recording(dir, turns).0
+}
+
+/// An agent plus the request log its provider writes.
+pub fn agent_recording(
+    dir: &TempDir,
+    turns: Vec<AssistantTurn>,
+) -> (Agent<MockProvider>, RequestLog) {
     let harness = ToolHarness::new(dir.path(), &dir.path().join("undo.jsonl")).expect("harness");
-    Agent::new(
-        MockProvider::scripted(turns),
+    let provider = MockProvider::scripted(turns);
+    let requests = provider.recorder();
+    let agent = Agent::new(
+        provider,
         harness,
         &dir.path().join("s.jsonl"),
         "mock-model",
         Limits::new(5, 2),
     )
-    .expect("agent")
+    .expect("agent");
+    (agent, requests)
 }

@@ -24,9 +24,23 @@ cargo test --workspace
 ```sh
 cargo run -p vox-interfaces-cli -- --help
 cargo run -p vox-interfaces-cli -- config
+# interactive mode is the default: one prompt per line, slash commands:
+OPENAI_API_KEY=... cargo run -p vox-interfaces-cli --
+#   vox> list the files
+#   vox> /session          (show this session id)
+#   vox> /sessions         (list stored sessions)
+#   vox> /resume vox-1730000000
+#   vox> /quit
 # print mode against any OpenAI-compatible endpoint:
 OPENAI_API_KEY=... cargo run -p vox-interfaces-cli -- -p "list the files"
 ```
+
+Interactive mode runs the real agent loop: every prompt executes tool
+calls, streams events (`-- turn 1 --`, `[tool] read ok`), and appends
+each event to a durable JSONL session under the data dir. `--session
+<ID>` picks the file, `--resume <ID>` continues an existing session
+with its full conversation, and Ctrl-C cancels a run at the next safe
+point without ending the session.
 
 ## 4. Find your first task
 

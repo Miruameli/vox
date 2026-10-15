@@ -52,7 +52,7 @@ pub fn resolve_config(cli: &Cli) -> VoxResult<vox_config::Config> {
 }
 
 /// Read the API key from the configured environment variable.
-fn read_api_key(config: &vox_config::Config) -> VoxResult<String> {
+pub(crate) fn read_api_key(config: &vox_config::Config) -> VoxResult<String> {
     let name = &config.general.api_key_env;
     std::env::var(name).map_err(|_| VoxError::Credential {
         detail: format!("environment variable {name} is not set"),

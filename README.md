@@ -31,6 +31,7 @@ intelligence, subagents, durable sessions — but stays a coding terminal.
 
 ## Fitur yang direncanakan / planned features
 
+- Mode interaktif (`vox` tanpa argumen) dengan siklus tool penuh, sesi durable, resume, dan Ctrl-C — sudah jalan
 - Print mode streaming (`vox -p`) terhadap provider OpenAI-compatible — sudah jalan
 - Edit engine ber-anchor content hash (hashline), apply atomik — sudah jalan
 - Tool harness: read/write/edit hashline jalan; grep/glob/bash + LSP + DAP berikutnya
@@ -48,7 +49,16 @@ cargo test --workspace
 cargo run -p vox-interfaces-cli -- --help
 ```
 
-Contoh print mode (butuh API key di environment):
+Contoh mode interaktif (butuh API key di environment):
+
+```sh
+OPENAI_API_KEY=... cargo run -p vox-interfaces-cli --
+vox vox-1730000000 | model ... | /help lists commands
+vox> jelaskan arsitektur repo ini
+vox> /quit
+```
+
+Contoh print mode satu prompt:
 
 ```sh
 OPENAI_API_KEY=... cargo run -p vox-interfaces-cli -- \

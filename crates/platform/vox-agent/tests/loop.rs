@@ -6,9 +6,10 @@ mod fixtures;
 use std::fs;
 
 use vox_agent::{FinishReason, LoopEvent};
+use vox_domain::message::{ContentBlock, Message, Role};
 use vox_session::replay;
 
-use fixtures::{agent, project, read_call, stop_turn, tool_call_turn};
+use fixtures::{agent, agent_recording, project, read_call, stop_turn, tool_call_turn};
 
 #[tokio::test]
 async fn one_full_tool_cycle_then_stop() {
@@ -80,4 +81,34 @@ async fn consecutive_tool_errors_stop_the_run() {
         .await
         .expect("run");
     assert_eq!(reason, FinishReason::ToolErrorLimit);
+}
+
+#[tokio::test]
+async fn a_resumed_run_sends_prior_messages_before_the_prompt() {
+    let dir = project();
+    let (agent, requests) = agent_recording(&dir, vec![stop_turn("done")]);
+    let prior = vec![
+        Message::user("earlier question"),
+        Message {
+            role: Role::Assistant,
+            content: vec![ContentBlock::Text {
+                text: "earlier answer".to_string(),
+            }],
+        },
+    ];
+    let mut agent = agent.with_prior(prior.clone());
+    let reason = agent.run("follow up", &mut |_| {}).await.expect("run");
+    assert_eq!(reason, FinishReason::ModelStopped);
+
+    let messages = requests
+        .lock()
+        .expect("lock")
+        .last()
+        .cloned()
+        .expect("no request recorded")
+        .messages;
+    assert_eq!(messages.len(), 3);
+    assert_eq!(messages[0], prior[0]);
+    assert_eq!(messages[1], prior[1]);
+    assert_eq!(messages[2].text_content(), "follow up");
 }

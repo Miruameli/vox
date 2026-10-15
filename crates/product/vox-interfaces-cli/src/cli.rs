@@ -21,6 +21,12 @@ pub struct Cli {
     /// Environment variable holding the provider API key.
     #[arg(long, value_name = "NAME", global = true)]
     pub api_key_env: Option<String>,
+    /// Session id to write; defaults to a fresh `vox-<unix>` id.
+    #[arg(long, value_name = "ID", global = true)]
+    pub session: Option<String>,
+    /// Continue an existing session instead of starting fresh.
+    #[arg(long, value_name = "ID", global = true)]
+    pub resume: Option<String>,
     /// Subcommand to run instead of the default interactive entry point.
     #[command(subcommand)]
     pub command: Option<Command>,
