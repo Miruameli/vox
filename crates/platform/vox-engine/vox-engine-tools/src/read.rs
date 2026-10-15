@@ -3,7 +3,7 @@
 use serde::Deserialize;
 use vox_domain::ToolResult;
 use vox_engine_edit::{line_hash, resolve_within};
-use vox_shared::{VoxError, VoxResult};
+use vox_shared::VoxResult;
 
 use crate::harness::ToolHarness;
 
@@ -70,7 +70,10 @@ pub fn hashed_view_range(file: &str, offset: usize, limit: usize) -> Result<Stri
 impl ToolHarness {
     /// Execute a read call.
     pub(crate) fn read(&self, call: &vox_domain::ToolCall) -> VoxResult<ToolResult> {
-        let args: ReadArgs = parse(call)?;
+        let args = match parse::<ReadArgs>(call) {
+            Ok(args) => args,
+            Err(detail) => return Ok(ToolResult::failure(&call.id, detail)),
+        };
         let limit = args.limit.unwrap_or(READ_VIEW_LIMIT);
         if limit > READ_VIEW_LIMIT {
             return Ok(ToolResult::failure(
@@ -101,9 +104,12 @@ impl ToolHarness {
     }
 }
 
-/// Deserialize call arguments, mapping failures to tool results.
-pub(crate) fn parse<T: serde::de::DeserializeOwned>(call: &vox_domain::ToolCall) -> VoxResult<T> {
-    serde_json::from_value(call.arguments.clone()).map_err(|error| VoxError::Edit {
-        detail: format!("{}: {error}", call.name),
-    })
+/// Deserialize call arguments, returning the decoder's detail message.
+///
+/// A malformed call is the model's mistake, not infrastructure: every
+/// tool turns this into a failure VALUE the model can act on.
+pub(crate) fn parse<T: serde::de::DeserializeOwned>(
+    call: &vox_domain::ToolCall,
+) -> Result<T, String> {
+    serde_json::from_value(call.arguments.clone()).map_err(|error| error.to_string())
 }

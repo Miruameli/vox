@@ -43,7 +43,10 @@ impl ToolHarness {
         &mut self,
         call: &vox_domain::ToolCall,
     ) -> vox_shared::VoxResult<ToolResult> {
-        let args: WriteArgs = parse(call)?;
+        let args = match parse::<WriteArgs>(call) {
+            Ok(args) => args,
+            Err(detail) => return Ok(ToolResult::failure(&call.id, detail)),
+        };
         let root = self.root().to_path_buf();
         let summary = match write_whole_file(&root, &args.path, &args.content, self.journal_mut()) {
             Ok(summary) => summary,

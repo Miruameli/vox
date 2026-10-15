@@ -86,12 +86,13 @@ fn edit_with_stale_anchor_fails_and_leaves_the_file_intact() {
 }
 
 #[test]
-fn edit_with_malformed_arguments_fails_as_an_infrastructure_error() {
+fn edit_with_malformed_arguments_returns_a_tool_failure() {
     let (_dir, mut harness) = project("x\n");
-    let error = harness
+    let result = harness
         .call(&call("edit", "c1", json!({"path": "main.rs"})))
-        .expect_err("missing ops");
-    assert_eq!(error.to_string(), "edit rejected");
+        .expect("dispatch");
+    assert!(result.is_error);
+    assert!(result.content.contains("ops"), "{}", result.content);
 }
 
 #[test]

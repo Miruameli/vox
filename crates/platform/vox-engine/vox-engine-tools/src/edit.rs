@@ -43,12 +43,16 @@ impl ToolHarness {
     /// Execute an edit call.
     ///
     /// Argument and anchor failures are tool-level failures: the file is
-    /// left untouched and the result message names the rejected anchor.
+    /// left untouched and the result message names what the model must
+    /// fix - the decoder detail or the rejected anchor.
     pub(crate) fn edit(
         &mut self,
         call: &vox_domain::ToolCall,
     ) -> vox_shared::VoxResult<ToolResult> {
-        let patch: HashlinePatch = parse(call)?;
+        let patch = match parse::<HashlinePatch>(call) {
+            Ok(patch) => patch,
+            Err(detail) => return Ok(ToolResult::failure(&call.id, detail)),
+        };
         let root = self.root().to_path_buf();
         let summary = match apply_patch(&root, &patch, self.journal_mut()) {
             Ok(summary) => summary,
