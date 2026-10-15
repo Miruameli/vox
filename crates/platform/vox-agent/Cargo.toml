@@ -11,6 +11,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+serde_json = "1.0.154"
 vox-domain = { version = "0.1.0", path = "../../core/vox-domain" }
 vox-engine-tools = { version = "0.1.0", path = "../vox-engine/vox-engine-tools" }
 vox-session = { version = "0.1.0", path = "../vox-session" }

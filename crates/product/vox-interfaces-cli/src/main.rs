@@ -2,8 +2,7 @@
 
 mod cli;
 mod print_mode;
-mod repl;
-mod runtime;
+mod tui_mode;
 
 use clap::Parser;
 use cli::{Cli, Command};
@@ -31,7 +30,7 @@ fn run() -> VoxResult<()> {
     match (&cli.command, &cli.prompt) {
         (Some(Command::Config), _) => run_config(&cli),
         (None, Some(prompt)) => runtime.block_on(print_mode::run(&cli, prompt)),
-        (None, None) => runtime.block_on(repl::run(&cli)),
+        (None, None) => runtime.block_on(tui_mode::run(&cli)),
     }
 }
 

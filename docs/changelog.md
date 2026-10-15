@@ -26,6 +26,20 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
   a result the model reads rather than a tool failure. A command
   the agent cannot start or that overruns is reported as a failure
   value the loop can act on.
+- `vox-presentation-tui` (product layer, ADR-0012): the interactive
+  terminal UI, now the default entry point of `vox`. A scrolling
+  transcript with labelled turns, tool activity shown as it runs with
+  an expandable, length-marked preview of what each tool returned, a
+  prompt line with recall, slash commands (`/quit`, `/cancel`,
+  `/clear`, `/tools`, `/expand`, `/help`), mouse wheel and page
+  scrolling that never moves what the user is reading, and a status
+  line that always says what the agent is doing. Rendering is
+  `ratatui` 0.30.2 over `crossterm` 0.29.0, styled with modifiers only
+  so the surface follows the user's terminal theme; the state machine
+  is pure, so keys, events, wrapping, and frames are tested without a
+  terminal. `vox-agent` gained `Agent::continue_conversation`, which
+  keeps a conversation across prompts, and its event sink is now
+  `Send` so a host can run the agent on a task of its own.
 - `vox-agent` (platform layer, ADR-0009): the bounded, durable tool-use
   loop. One run is one prompt: request with tools, execute each call
   through the tool harness, append every message/call/result to the

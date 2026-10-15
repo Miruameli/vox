@@ -1,0 +1,29 @@
+[package]
+name = "vox-presentation-tui"
+description = "Interactive terminal UI for the Vox agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+ratatui = "=0.30.2"
+crossterm = "=0.29.0"
+unicode-width = "=0.2.2"
+tokio = { version = "1.53.3", features = ["rt", "rt-multi-thread", "macros", "sync"] }
+tracing = "0.1.44"
+vox-agent = { version = "0.1.0", path = "../../platform/vox-agent" }
+vox-config = { version = "0.1.0", path = "../../core/vox-config" }
+vox-domain = { version = "0.1.0", path = "../../core/vox-domain" }
+vox-engine-tools = { version = "0.1.0", path = "../../platform/vox-engine/vox-engine-tools" }
+vox-provider-openai = { version = "0.1.0", path = "../../platform/vox-provider/vox-provider-openai" }
+vox-session = { version = "0.1.0", path = "../../platform/vox-session" }
+vox-shared = { version = "0.1.0", path = "../../core/vox-shared" }
+
+[dev-dependencies]
+serde_json = "1.0.154"
+tempfile = "3.23.0"

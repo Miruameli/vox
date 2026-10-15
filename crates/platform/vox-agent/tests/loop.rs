@@ -25,13 +25,17 @@ async fn one_full_tool_cycle_then_stop() {
         .expect("run");
 
     assert_eq!(reason, FinishReason::ModelStopped);
-    assert!(events.contains(&LoopEvent::ToolStarted {
-        name: "read".into()
-    }));
-    assert!(events.contains(&LoopEvent::ToolFinished {
-        name: "read".into(),
-        is_error: false,
-    }));
+    assert!(events.iter().any(|e| matches!(
+        e,
+        LoopEvent::ToolStarted { name, .. } if name == "read"
+    )));
+    // Tool events carry a bounded preview of what the tool saw, not
+    // the whole output: the session file holds the full result.
+    assert!(events.iter().any(|e| matches!(
+        e,
+        LoopEvent::ToolFinished { name, is_error, detail }
+            if name == "read" && !is_error && !detail.trim().is_empty()
+    )));
     let texts: Vec<String> = events
         .iter()
         .filter_map(|e| match e {

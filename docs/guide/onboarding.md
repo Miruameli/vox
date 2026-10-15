@@ -49,7 +49,21 @@ argv command with a mandatory timeout and capped output. Search
 output is capped and the cap is announced, so a run over a large
 tree stays bounded.
 
-## 4. Find your first task
+## 4. Try the interactive UI
+
+```sh
+cargo run -p vox-interfaces-cli
+```
+
+`vox` with no `-p` opens the terminal UI described in
+[ADR-0012](../adr/presentation/0012-interactive-tui.md) and in the
+README. Type a prompt and press Enter; `/help` inside the surface lists
+the keys and commands. The interactive session writes one durable
+session file, so the same store that print mode uses now backs the
+conversation.
+
+## 5. Find your first task
+>>>>>>> a054f40 (feat(presentation): interactive terminal UI as the default entry point)
 
 - Read [docs/index.md](../index.md) for the architecture map.
 - Browse issues labelled `good first issue`.
@@ -69,6 +83,16 @@ tree stays bounded.
 
 ## Current state
 
-Print mode is implemented end to end against OpenAI-compatible providers.
-The interactive TUI, tool harness, edit engine, and language-server
-integration are tracked in the issue roadmap.
+Print mode and the interactive TUI are implemented end to end against
+OpenAI-compatible providers. The tool harness (read, edit, write over
+the hashline edit engine), the bounded and durable agent loop, and the
+session store are in place. The search and execution tools
+(grep, glob, bash), language-server integration, subagents, and the
+editor RPC surface are tracked in the issue roadmap.
+
+| Path | Contents |
+| --- | --- |
+| `crates/product/vox-presentation-tui/` | the interactive surface: state, rendering, terminal shell |
+| `crates/platform/vox-agent/` | the bounded, durable tool-use loop |
+
+The full layer map lives in [docs/index.md](../index.md).

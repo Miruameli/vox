@@ -1,30 +1,37 @@
 //! The agent run: a bounded, durable tool-use loop.
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
-use vox_domain::completion::CompletionRequest;
 use vox_domain::message::Message;
 use vox_domain::provider::ModelProvider;
 use vox_engine_tools::ToolHarness;
-use vox_session::{EventKind, SessionWriter};
+use vox_session::SessionWriter;
 use vox_shared::VoxResult;
 
-use crate::bounds::{FinishReason, Limits};
-use crate::events::LoopEvent;
-use crate::resume::{messages_from_events, tool_calls_of, tool_result_message};
+use crate::contract::{FinishReason, Limits, LoopEvent};
+use crate::resume::messages_from_events;
 
 /// An agent run: one prompt, bounded turns, durable events.
+///
+/// The fields are visible to the crate, not the public API: the loop
+/// in [`crate::run_loop`] drives them, and callers outside this
+/// crate can only reach the constructor, the cancellation token, and
+/// the run.
 pub struct Agent<P: ModelProvider> {
-    provider: P,
-    harness: ToolHarness,
-    session: SessionWriter,
-    session_path: PathBuf,
-    model: String,
-    limits: Limits,
-    cancelled: Arc<AtomicBool>,
-    messages: Vec<Message>,
+    pub(crate) provider: P,
+    pub(crate) harness: ToolHarness,
+    pub(crate) session: SessionWriter,
+    pub(crate) session_path: PathBuf,
+    pub(crate) model: String,
+    pub(crate) limits: Limits,
+    pub(crate) cancelled: Arc<AtomicBool>,
+    /// The agent's own conversation: everything earlier `run` calls
+    /// produced, seeded once by [`Self::with_prior`]. Surfaces that
+    /// own their history (the TUI) use
+    /// [`Self::continue_conversation`] instead and never touch it.
+    pub(crate) messages: Vec<Message>,
 }
 
 impl<P: ModelProvider> Agent<P> {
@@ -76,82 +83,19 @@ impl<P: ModelProvider> Agent<P> {
     /// session before the next provider request, so a crash resumes
     /// from the file with nothing lost. Each call extends the same
     /// conversation: a second `run` in one process sees everything
-    /// the first one produced.
+    /// the first one produced. Surfaces that own their history (the
+    /// TUI) use [`Self::continue_conversation`] instead.
     pub async fn run(
         &mut self,
         prompt: &str,
-        sink: &mut dyn FnMut(LoopEvent),
+        sink: &mut (dyn FnMut(LoopEvent) + Send),
     ) -> VoxResult<FinishReason> {
-        let user = Message::user(prompt);
-        self.session.append(EventKind::Message {
-            message: user.clone(),
-        })?;
-        self.messages.push(user);
-        let mut consecutive_tool_errors = 0usize;
-
-        for turn in 1..=self.limits.max_turns {
-            if self.cancelled.load(Ordering::SeqCst) {
-                return self.finish(sink, FinishReason::Cancelled);
-            }
-            sink(LoopEvent::TurnStarted { turn });
-            let request = CompletionRequest::with_tools(
-                self.model.clone(),
-                self.messages.clone(),
-                vox_engine_tools::definitions(),
-            );
-            let assistant = self.provider.complete(&request).await?;
-            self.session.append(EventKind::Message {
-                message: assistant.message.clone(),
-            })?;
-            sink(LoopEvent::Text {
-                text: assistant.message.text_content(),
-            });
-
-            let tool_calls = tool_calls_of(&assistant.message);
-            let wants_tools = assistant.finish_reason.as_deref() == Some("tool_calls");
-            self.messages.push(assistant.message);
-            if !wants_tools || tool_calls.is_empty() {
-                return self.finish(sink, FinishReason::ModelStopped);
-            }
-
-            for call in tool_calls {
-                if self.cancelled.load(Ordering::SeqCst) {
-                    return self.finish(sink, FinishReason::Cancelled);
-                }
-                sink(LoopEvent::ToolStarted {
-                    name: call.name.clone(),
-                });
-                self.session
-                    .append(EventKind::ToolCall { call: call.clone() })?;
-                let result = self.harness.call(&call)?;
-                self.session.append(EventKind::ToolResult {
-                    result: result.clone(),
-                })?;
-                sink(LoopEvent::ToolFinished {
-                    name: call.name.clone(),
-                    is_error: result.is_error,
-                });
-                consecutive_tool_errors = if result.is_error {
-                    consecutive_tool_errors + 1
-                } else {
-                    0
-                };
-                if consecutive_tool_errors >= self.limits.max_consecutive_tool_errors {
-                    return self.finish(sink, FinishReason::ToolErrorLimit);
-                }
-                self.messages.push(tool_result_message(&result));
-            }
-        }
-        self.finish(sink, FinishReason::TurnLimit)
-    }
-
-    /// Emit the terminal event and return the reason.
-    fn finish(
-        &self,
-        sink: &mut dyn FnMut(LoopEvent),
-        reason: FinishReason,
-    ) -> VoxResult<FinishReason> {
-        sink(LoopEvent::Finished { reason });
-        Ok(reason)
+        // The conversation is taken out for the run and written back
+        // afterwards, so a failed turn keeps its partial conversation
+        // for the next call instead of retrying from scratch.
+        let mut history = std::mem::take(&mut self.messages);
+        let reason = self.continue_conversation(&mut history, prompt, sink).await;
+        self.messages = history;
+        reason
     }
 }

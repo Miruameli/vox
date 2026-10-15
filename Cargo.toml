@@ -10,6 +10,7 @@ members = [
     "crates/platform/vox-session",
     "crates/platform/vox-provider/vox-provider-openai",
     "crates/product/vox-interfaces-cli",
+    "crates/product/vox-presentation-tui",
 ]
 
 [workspace.package]

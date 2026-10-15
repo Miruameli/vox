@@ -38,6 +38,10 @@ an ADR; every operating procedure has a runbook or governance page.
     configuration and project trust model
   - [ADR-0008](adr/operations/0008-quality-gates.md) — quality gates and CI
     pipeline
+- [adr/presentation/](adr/presentation/) — presentation decisions
+  - [ADR-0012](adr/presentation/0012-interactive-tui.md) — the
+    interactive terminal UI: crate boundary, `ratatui`/`crossterm`, and
+    the agent bridge
 
 ## Governance / Tata kelola
 
