@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core/vox-config",
+    "crates/core/vox-domain",
+    "crates/core/vox-shared",
+    "crates/platform/vox-provider/vox-provider-openai",
+    "crates/product/vox-interfaces-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.98"
+license = "MIT"
+publish = false
+
+[workspace.lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

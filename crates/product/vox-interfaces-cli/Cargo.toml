@@ -1,0 +1,24 @@
+[package]
+name = "vox-interfaces-cli"
+description = "Command-line interface binary (vox) for the Vox coding agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "vox"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive"] }
+tokio = { version = "1.53.3", features = ["rt-multi-thread"] }
+tracing = "0.1.44"
+vox-config = { version = "0.1.0", path = "../../core/vox-config" }
+vox-domain = { version = "0.1.0", path = "../../core/vox-domain" }
+vox-provider-openai = { version = "0.1.0", path = "../../platform/vox-provider/vox-provider-openai" }
+vox-shared = { version = "0.1.0", path = "../../core/vox-shared" }

@@ -1,0 +1,25 @@
+[package]
+name = "vox-provider-openai"
+description = "OpenAI-compatible streaming provider adapter for Vox"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+futures-util = "0.3.34"
+reqwest = { version = "=0.12.28", default-features = false, features = [
+    "rustls-tls",
+    "stream",
+    "json",
+] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = "1.53.3"
+tracing = "0.1.44"
+vox-domain = { version = "0.1.0", path = "../../../core/vox-domain" }
+vox-shared = { version = "0.1.0", path = "../../../core/vox-shared" }
