@@ -1,4 +1,9 @@
 //! Atomic file replacement: temporary file, then rename.
+//!
+//! Write-path failures (a partial `write_all` or a failing `sync_all`)
+//! are not deterministically injectable without a seam; the funnel
+//! below removes the temporary file on every failing step, and the
+//! rename failure test pins that the rename-path cleanup is real.
 
 use std::fs;
 use std::io::Write;
@@ -97,8 +102,8 @@ mod tests {
     }
 
     #[test]
-    fn write_failure_leaves_no_temporary_file() {
-        let dir = temp_dir("write-fail");
+    fn create_failure_leaves_no_temporary_file() {
+        let dir = temp_dir("create-fail");
         // A file where the parent directory should be makes the
         // temporary create fail deterministically (ENOTDIR).
         let blocked = dir.join("blocked");

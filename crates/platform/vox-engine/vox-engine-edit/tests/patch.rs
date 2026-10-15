@@ -82,15 +82,23 @@ fn delete_needs_no_replacement_lines() {
 
 #[test]
 fn split_and_join_round_trip_preserves_bytes() {
-    for text in ["a\nb\nc\n", "a\r\nb\r\nc\r\n", "a\nb\nc", "", "\n"] {
-        let (lines, terminator, final_newline) = split_lines(text);
-        assert_eq!(join_lines(&lines, terminator, final_newline), text);
+    for text in [
+        "a\nb\nc\n",
+        "a\r\nb\r\nc\r\n",
+        "a\nb\nc",
+        "a\r\nb\nc",
+        "",
+        "\n",
+        "a\n\nb\n",
+    ] {
+        assert_eq!(join_lines(&split_lines(text)), text);
     }
 }
 
 #[test]
-fn crlf_files_keep_crlf_terminators() {
-    let (lines, terminator, _) = split_lines("a\r\nb\r\n");
-    assert_eq!(lines, vec!["a".to_string(), "b".to_string()]);
-    assert_eq!(terminator, "\r\n");
+fn mixed_terminators_are_carried_per_line() {
+    let lines = split_lines("a\r\nb\nc");
+    let endings: Vec<&str> = lines.iter().map(|line| line.terminator).collect();
+    assert_eq!(endings, vec!["\r\n", "\n", ""]);
+    assert_eq!(join_lines(&lines), "a\r\nb\nc");
 }

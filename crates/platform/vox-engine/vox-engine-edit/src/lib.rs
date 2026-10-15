@@ -16,11 +16,13 @@
 
 mod atomic;
 mod hashline;
+mod lines;
 mod patch;
 mod undo;
 
 pub use hashline::{anchor_matches, hashed_view, line_hash, HASH_LEN};
-pub use patch::{join_lines, split_lines, EditOp, HashlinePatch};
+pub use lines::{join_lines, split_lines, TextLine};
+pub use patch::{EditOp, HashlinePatch};
 pub use undo::{UndoJournal, UndoRecord};
 
 use std::path::{Path, PathBuf};
@@ -46,18 +48,19 @@ pub struct ApplySummary {
 /// path must stay inside `root`.
 pub fn resolve_within(root: &Path, relative: &str) -> VoxResult<PathBuf> {
     let candidate = Path::new(relative);
+    let rejected = |detail: String| VoxError::Edit { detail };
     if relative.is_empty() || candidate.is_absolute() || candidate.has_root() {
-        return Err(VoxError::Edit {
-            detail: format!("path {relative:?} is not a relative project path"),
-        });
+        return Err(rejected(format!(
+            "path {relative:?} is not a relative project path"
+        )));
     }
     if candidate
         .components()
         .any(|part| !matches!(part, std::path::Component::Normal(_)))
     {
-        return Err(VoxError::Edit {
-            detail: format!("path {relative:?} escapes the project root"),
-        });
+        return Err(rejected(format!(
+            "path {relative:?} escapes the project root"
+        )));
     }
     Ok(root.join(candidate))
 }
@@ -76,43 +79,20 @@ pub fn apply_patch(
     let original = std::fs::read_to_string(&path).map_err(|error| VoxError::Edit {
         detail: format!("{}: {error}", patch.path),
     })?;
-    let (mut lines, terminator, ends_with_newline) = patch::split_lines(&original);
+    let mut lines = lines::split_lines(&original);
     patch
         .validate(lines.len())
         .map_err(|detail| VoxError::Edit { detail })?;
     for op in &patch.ops {
         let (line, expect_hash) = op.anchor();
-        if !anchor_matches(expect_hash, &lines[line - 1]) {
+        if !anchor_matches(expect_hash, &lines[line - 1].content) {
             return Err(VoxError::Edit {
                 detail: format!("{}:{line} anchor mismatch", patch.path),
             });
         }
     }
-    let mut ops = patch.ops.clone();
-    ops.sort_by_key(|op| std::cmp::Reverse(op.anchor_line()));
-    let (mut added, mut removed) = (0usize, 0usize);
-    for op in ops {
-        match op {
-            EditOp::Replace {
-                line, new_lines, ..
-            } => {
-                lines.splice(line - 1..line, new_lines);
-                added += 1;
-                removed += 1;
-            }
-            EditOp::Insert {
-                line, new_lines, ..
-            } => {
-                lines.splice(line..line, new_lines);
-                added += 1;
-            }
-            EditOp::Delete { line, .. } => {
-                lines.remove(line - 1);
-                removed += 1;
-            }
-        }
-    }
-    let updated = patch::join_lines(&lines, terminator, ends_with_newline);
+    let (added, removed) = lines::apply_ops(&mut lines, &patch.ops);
+    let updated = lines::join_lines(&lines);
     let summary = ApplySummary {
         path: path.clone(),
         lines_added: added,

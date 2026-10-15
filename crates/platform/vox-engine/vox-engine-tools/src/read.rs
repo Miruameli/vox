@@ -49,10 +49,12 @@ pub fn definition() -> vox_domain::ToolDefinition {
 /// Render `lines[start..end]` with 1-based absolute numbers and hashes.
 ///
 /// The format matches [`vox_engine_edit::hashed_view`] exactly; a test
-/// in this crate pins the parity.
+/// in this crate pins the parity. An empty file has no out-of-range
+/// offsets: reading it returns an empty view, because the file is
+/// readable, not misplaced.
 pub fn hashed_view_range(file: &str, offset: usize, limit: usize) -> Result<String, String> {
     let lines: Vec<&str> = file.lines().collect();
-    if offset == 0 || offset > lines.len() {
+    if offset == 0 || offset > lines.len().max(1) {
         return Err(format!("line {offset} is outside 1..={}", lines.len()));
     }
     let end = (offset - 1).saturating_add(limit).min(lines.len());
