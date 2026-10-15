@@ -24,23 +24,13 @@ cargo test --workspace
 ```sh
 cargo run -p vox-interfaces-cli -- --help
 cargo run -p vox-interfaces-cli -- config
-# interactive mode is the default: one prompt per line, slash commands:
-OPENAI_API_KEY=... cargo run -p vox-interfaces-cli --
-#   vox> list the files
-#   vox> /session          (show this session id)
-#   vox> /sessions         (list stored sessions)
-#   vox> /resume vox-1730000000
-#   vox> /quit
 # print mode against any OpenAI-compatible endpoint:
 OPENAI_API_KEY=... cargo run -p vox-interfaces-cli -- -p "list the files"
 ```
 
-Interactive mode runs the real agent loop: every prompt executes tool
-calls, streams events (`-- turn 1 --`, `[tool] read ok`), and appends
-each event to a durable JSONL session under the data dir. `--session
-<ID>` picks the file, `--resume <ID>` continues an existing session
-with its full conversation, and Ctrl-C cancels a run at the next safe
-point without ending the session.
+Print mode answers one prompt and exits; it keeps no session, so
+`--session` and `--resume` are rejected there - both flags belong
+to the interactive surface below.
 
 The model has six tools: `read`, `edit`, `write` (hashline patching,
 ADR-0005), the two search tools `grep` (literal substring) and
@@ -57,13 +47,16 @@ cargo run -p vox-interfaces-cli
 
 `vox` with no `-p` opens the terminal UI described in
 [ADR-0012](../adr/presentation/0012-interactive-tui.md) and in the
-README. Type a prompt and press Enter; `/help` inside the surface lists
-the keys and commands. The interactive session writes one durable
-session file, so the same store that print mode uses now backs the
-conversation.
+README. Type a prompt and press Enter; Up and Down recall earlier
+prompts; `/help` inside the surface lists the keys and commands,
+`/quit` leaves. The interactive surface runs the real agent loop:
+every prompt executes tool calls, streams them into the scrolling
+transcript, Ctrl-C cancels a run at the next safe point, and each
+event is appended to a durable JSONL session under the data dir.
+`--session <ID>` picks the file to write, `--resume <ID>`
+continues an existing session with its full conversation.
 
 ## 5. Find your first task
->>>>>>> a054f40 (feat(presentation): interactive terminal UI as the default entry point)
 
 - Read [docs/index.md](../index.md) for the architecture map.
 - Browse issues labelled `good first issue`.
