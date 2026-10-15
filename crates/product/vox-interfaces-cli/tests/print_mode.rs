@@ -87,6 +87,25 @@ fn print_mode_fails_without_credential() {
 }
 
 #[test]
+fn print_mode_rejects_session_flags() {
+    // The flags are honored by the interactive surface; print mode
+    // keeps no session, and a silently inert flag is
+    // indistinguishable from a lost session.
+    let (base_url, _request_rx) = spawn_mock_server();
+    for flag in ["--session", "--resume"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_vox"))
+            .args(["-p", "hi", "--base-url", &base_url, flag, "some-id"])
+            .env("OPENAI_API_KEY", "test-key")
+            .output()
+            .expect("run cli");
+        assert!(!output.status.success(), "{flag} accepted");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains("keeps no session"), "stderr: {stderr}");
+        assert!(!stderr.contains("test-key"), "credential leaked: {stderr}");
+    }
+}
+
+#[test]
 fn config_subcommand_prints_resolved_settings() {
     let output = Command::new(env!("CARGO_BIN_EXE_vox"))
         .args(["config", "--model", "mock-model"])

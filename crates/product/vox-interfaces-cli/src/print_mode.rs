@@ -14,7 +14,12 @@ use crate::cli::Cli;
 ///
 /// Text deltas are written incrementally so output starts before the model
 /// finishes. Secrets are never printed; only model text reaches stdout.
+///
+/// Print mode keeps no session - one prompt, streamed answer, exit - so
+/// the session flags are rejected rather than silently ignored: a flag
+/// that does nothing looks exactly like a session that was lost.
 pub async fn run(cli: &Cli, prompt: &str) -> VoxResult<()> {
+    reject_session_flags(cli)?;
     let config = resolve_config(cli)?;
     let api_key = read_api_key(&config)?;
     let base_url = config
@@ -35,6 +40,21 @@ pub async fn run(cli: &Cli, prompt: &str) -> VoxResult<()> {
             }
         })
         .await
+}
+
+/// Refuse the session flags: they belong to the interactive surface.
+///
+/// `--session` names a file to write and `--resume` continues a stored
+/// conversation; neither means anything for one prompt that exits, so
+/// both fail with the surface that does keep sessions.
+fn reject_session_flags(cli: &Cli) -> VoxResult<()> {
+    if cli.session.is_some() || cli.resume.is_some() {
+        return Err(VoxError::Io(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "print mode keeps no session; run without -p to use --session/--resume",
+        )));
+    }
+    Ok(())
 }
 
 /// Resolve configuration across all layers.

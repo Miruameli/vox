@@ -7,6 +7,14 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The TUI seeded the stored conversation for plain `--session <id>`
+  as well as `--resume <id>`, silently continuing stale turns when
+  only the file to write was named; only `--resume` now continues a
+  conversation. Print mode ignored the session flags entirely, which
+  is indistinguishable from a lost session; it now fails with an
+  actionable error
+  ([#34](https://github.com/Miruameli/vox/issues/34)).
+
 - `bash` returned a finished command's answer only at the end of
   its whole timeout budget when a background process held the
   pipes open (`sh -c "echo ready; sleep 30 &"` with a 30s budget
