@@ -1,0 +1,20 @@
+[package]
+name = "vox-engine-edit"
+description = "Hashline edit engine with atomic writes and an undo journal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+blake3 = "1.8.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+vox-shared = { version = "0.1.0", path = "../../../core/vox-shared" }
+
+[dev-dependencies]
+tempfile = "3.23.0"
