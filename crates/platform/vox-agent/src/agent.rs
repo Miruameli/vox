@@ -24,7 +24,7 @@ pub struct Agent<P: ModelProvider> {
     model: String,
     limits: Limits,
     cancelled: Arc<AtomicBool>,
-    prior: Vec<Message>,
+    messages: Vec<Message>,
 }
 
 impl<P: ModelProvider> Agent<P> {
@@ -45,13 +45,17 @@ impl<P: ModelProvider> Agent<P> {
             model: model.into(),
             limits,
             cancelled: Arc::new(AtomicBool::new(false)),
-            prior: Vec::new(),
+            messages: Vec::new(),
         })
     }
 
-    /// Seed the conversation for a resumed run.
+    /// Seed the conversation once, before the first `run` call.
+    ///
+    /// A resume rebuilds the stored conversation and hands it over
+    /// here; every later `run` continues from the agent's own
+    /// growing conversation instead.
     pub fn with_prior(mut self, prior: Vec<Message>) -> Self {
-        self.prior = prior;
+        self.messages = prior;
         self
     }
 
@@ -66,11 +70,13 @@ impl<P: ModelProvider> Agent<P> {
         Ok(messages_from_events(&vox_session::replay(&text)?))
     }
 
-    /// Run one prompt to completion.
+    /// Run one prompt, continuing the agent's conversation.
     ///
     /// Every message, tool call, and tool result is appended to the
     /// session before the next provider request, so a crash resumes
-    /// from the file with nothing lost.
+    /// from the file with nothing lost. Each call extends the same
+    /// conversation: a second `run` in one process sees everything
+    /// the first one produced.
     pub async fn run(
         &mut self,
         prompt: &str,
@@ -80,8 +86,7 @@ impl<P: ModelProvider> Agent<P> {
         self.session.append(EventKind::Message {
             message: user.clone(),
         })?;
-        let mut messages = std::mem::take(&mut self.prior);
-        messages.push(user);
+        self.messages.push(user);
         let mut consecutive_tool_errors = 0usize;
 
         for turn in 1..=self.limits.max_turns {
@@ -91,7 +96,7 @@ impl<P: ModelProvider> Agent<P> {
             sink(LoopEvent::TurnStarted { turn });
             let request = CompletionRequest::with_tools(
                 self.model.clone(),
-                messages.clone(),
+                self.messages.clone(),
                 vox_engine_tools::definitions(),
             );
             let assistant = self.provider.complete(&request).await?;
@@ -104,7 +109,7 @@ impl<P: ModelProvider> Agent<P> {
 
             let tool_calls = tool_calls_of(&assistant.message);
             let wants_tools = assistant.finish_reason.as_deref() == Some("tool_calls");
-            messages.push(assistant.message);
+            self.messages.push(assistant.message);
             if !wants_tools || tool_calls.is_empty() {
                 return self.finish(sink, FinishReason::ModelStopped);
             }
@@ -134,7 +139,7 @@ impl<P: ModelProvider> Agent<P> {
                 if consecutive_tool_errors >= self.limits.max_consecutive_tool_errors {
                     return self.finish(sink, FinishReason::ToolErrorLimit);
                 }
-                messages.push(tool_result_message(&result));
+                self.messages.push(tool_result_message(&result));
             }
         }
         self.finish(sink, FinishReason::TurnLimit)

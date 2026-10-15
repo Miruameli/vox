@@ -68,6 +68,12 @@ pub fn emit(line: &str) {
     let _ = std::io::stdout().flush();
 }
 
+/// Write the input prompt without a trailing newline.
+pub fn prompt() {
+    print!("vox> ");
+    let _ = std::io::stdout().flush();
+}
+
 /// Unix seconds, for default session ids.
 pub fn unix_secs() -> u64 {
     SystemTime::now()

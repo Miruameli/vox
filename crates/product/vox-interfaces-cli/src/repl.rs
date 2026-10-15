@@ -14,7 +14,9 @@ use vox_shared::VoxResult;
 
 use crate::cli::Cli;
 use crate::print_mode::resolve_config;
-use crate::runtime::{build, emit, sessions, spawn_interrupt_watch, spawn_line_reader, unix_secs};
+use crate::runtime::{
+    build, emit, prompt, sessions, spawn_interrupt_watch, spawn_line_reader, unix_secs,
+};
 
 /// One parsed line of REPL input.
 enum Command {
@@ -45,7 +47,7 @@ pub async fn run(cli: &Cli) -> VoxResult<()> {
         config.general.model
     ));
     loop {
-        emit("vox> ");
+        prompt();
         let line = tokio::select! {
             text = lines.recv() => match text {
                 Some(text) => text,
