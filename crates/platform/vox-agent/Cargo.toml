@@ -1,0 +1,23 @@
+[package]
+name = "vox-agent"
+description = "Bounded, durable tool-use loop over providers, tools, and sessions"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+vox-domain = { version = "0.1.0", path = "../../core/vox-domain" }
+vox-engine-edit = { version = "0.1.0", path = "../vox-engine/vox-engine-edit" }
+vox-engine-tools = { version = "0.1.0", path = "../vox-engine/vox-engine-tools" }
+vox-session = { version = "0.1.0", path = "../vox-session" }
+vox-shared = { version = "0.1.0", path = "../../core/vox-shared" }
+
+[dev-dependencies]
+serde_json = "1.0.154"
+tempfile = "3.23.0"
+tokio = { version = "1.53.3", features = ["rt", "macros"] }
