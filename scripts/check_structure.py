@@ -15,6 +15,7 @@ Exit code 0 means all rules hold; 1 lists every violation.
 """
 
 from pathlib import Path
+import subprocess
 import sys
 
 MAX_FILE_LINES = 150
@@ -61,9 +62,35 @@ def check_folders(root: Path) -> list[str]:
     return violations
 
 
+def tracked_root_files(root: Path) -> list[str]:
+    """Root files tracked by git.
+
+    CI steps write artifacts into the working tree (the secret scan
+    writes results.sarif into the repository root) and developers keep
+    untracked scratch files around; neither belongs to the repository
+    structure. Falls back to the working tree minus SARIF reports when
+    git is unavailable.
+    """
+    try:
+        output = subprocess.run(
+            ["git", "ls-files"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return sorted(
+            child.name
+            for child in root.iterdir()
+            if child.is_file() and child.suffix != ".sarif"
+        )
+    return sorted({line for line in output.splitlines() if line and "/" not in line})
+
+
 def check_root(root: Path) -> list[str]:
     violations = []
-    files = [child for child in root.iterdir() if child.is_file()]
+    files = tracked_root_files(root)
     if len(files) > MAX_DIRECT_FILES:
         violations.append(
             f"<repo root>: {len(files)} direct files (max {MAX_DIRECT_FILES})"
