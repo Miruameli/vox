@@ -5,6 +5,17 @@ based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- `grep` returned matches in lexicographic order, so
+  `big.rs:100:` outranked `big.rs:11:` and the 100-line cap showed a
+  lexicographic page instead of the first matches
+  ([#27](https://github.com/Miruameli/vox/issues/27)). The tool now
+  sorts the file list it walks (walk order is unspecified by
+  contract) and relies on per-file line order from enumeration;
+  ordering is pinned by tests, including under the cap. `glob`
+  rejects an empty pattern, matching `grep`'s existing validation.
+
 ### Added
 
 - `vox-agent` (platform layer, ADR-0009): the bounded, durable tool-use
